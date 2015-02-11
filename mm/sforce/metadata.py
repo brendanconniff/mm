@@ -265,7 +265,15 @@ class SforceMetadataClient(SforceBaseClient):
         if retXml == True:
             try:
                 list_result_dict = xmltodict.parse(list_result,postprocessor=util.xmltodict_postprocessor)
-                return list_result_dict['soapenv:Envelope']["soapenv:Body"]["listMetadataResponse"]["result"]
+                result = list_result_dict['soapenv:Envelope']["soapenv:Body"]["listMetadataResponse"]["result"]
+                # for namespaced layouts, listMetadata doesn't return the correct name
+                # we need to prepend the namespacePrefix to the layout name
+                if metadata_type == 'Layout':
+                    for d in result:
+                        if 'namespacePrefix' in d:
+                            d['fullName'] = d['fullName'].replace('-', '-'+d['namespacePrefix']+'__', 1)
+                            d['fileName'] = d['fileName'].replace('-', '-'+d['namespacePrefix']+'__', 1)
+                return result
             except:
                 return []
         return list_result
